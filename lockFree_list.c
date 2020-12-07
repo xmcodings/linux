@@ -1,6 +1,6 @@
 #define NUMBER_OF_DATA 100000
-#define NUMBER_OF_THREAD 1 
-#define THREAD_WORK 100000
+#define NUMBER_OF_THREAD 10
+#define THREAD_WORK 10000
 
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -54,7 +54,6 @@ void compareInsert(void){
 	head = kmalloc(sizeof(struct kernel_node), GFP_KERNEL);
 	head->data = -1;
 	tail = head;
-
 	improveD_time = 0;
 
 	start = ktime_get();
@@ -72,25 +71,39 @@ void compareInsert(void){
 	{
 		kthread_run(&insertThread, NULL,"insertThread");
 	}
-	msleep(3000); // 쓰레드 다 끝날 때가지 대기
-
 	printk("Improve data structure -> %lld ns\n",(long long)improveD_time);
 	printk("Improve %lld ns\n\n",(long long)(kernelD_time-improveD_time));
+}
+
+void compareDelete(int data){
+	struct kernel_node *current_node, *temp;
+	improveD_time =0;
+
+	start = ktime_get();
+	list_for_each_entry_safe(current_node, temp, &klist, list){
+		if(current_node->data == data){
+			list_del(&current_node->list);
+			kfree(current_node);
+		}
+	}
+	end = ktime_get();
+	kernelD_time = ktime_to_ns(ktime_sub(end, start));
+	printk("---Delete time---\nKernel data structure -> %lld ns",(long long)kernelD_time);
 }
 
 
 static int __init list_module_init(void)
 {
-	printk("Improve Data structure performance! Data %d.\n", NUMBER_OF_DATA);
+	printk("Improve Data structure performance! Data %d.\n\n", NUMBER_OF_DATA);
 	compareInsert();
-	//compareDelete();
+	compareDelete(5000);
 	//compareTraverse();
 	return 0;
 }
 
 static void __exit list_module_cleanup(void)
 {
-	printk("We are team 8!\n");
+	printk("\nWe are team 8!\n");
 }
 
 module_init(list_module_init);
